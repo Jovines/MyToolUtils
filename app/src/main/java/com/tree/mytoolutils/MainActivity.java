@@ -1,6 +1,7 @@
 package com.tree.mytoolutils;
 
 import android.Manifest;
+import android.animation.TimeAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -57,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, READ_EXTERNAL);
+                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE}, READ_EXTERNAL);
                 } else {
                     ImageLoader.with(button.getContext()).getImage(uri).into(imageView1);
                     ImageLoader.with(button.getContext()).getImage(uri).into(imageView2);
@@ -67,22 +68,24 @@ public class MainActivity extends AppCompatActivity {
                     ImageLoader.with(button.getContext()).getImage(uri).into(imageView6);
 
                 }
-//                ImageLoader.with(button.getContext()).getImage("http://img2.imgtn.bdimg.com/it/u=1122649470,955539824&fm=26&gp=0.jpg").into(imageView);
             }
         });
     }
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
-            case WRITE_EXTERNAL:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                } else {
-                }
-                break;
             case READ_EXTERNAL:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    ImageLoader.with(button.getContext()).getImage(uri).into(imageView1);
+                    ImageLoader.with(button.getContext()).getImage(uri).into(imageView2);
+                    ImageLoader.with(button.getContext()).getImage(uri).into(imageView3);
+                    ImageLoader.with(button.getContext()).getImage(uri).into(imageView4);
+                    ImageLoader.with(button.getContext()).getImage(uri).into(imageView5);
+                    ImageLoader.with(button.getContext()).getImage(uri).into(imageView6);
                 } else {
+                    Toast.makeText(MainActivity.this, "授权失败", Toast.LENGTH_SHORT);
                 }
+                break;
         }
     }
 }

@@ -11,7 +11,6 @@ import android.util.Log;
 import android.util.LruCache;
 import android.view.View;
 
-import com.tree.mytoolutils.R;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,21 +22,13 @@ import static android.content.ContentValues.TAG;
 public class ImageCache {
 
     LruCache<String, Bitmap> lruCache;
+    private static ImageCache imageCache;
     private MD5 md5;
-    private Context mContext;
     private StringBuilder path = new StringBuilder(Environment.getExternalStorageDirectory().getAbsolutePath());
 
 
-    //可设置本地缓存目录的构造方法
-    public ImageCache(Context context, String localDirectory) throws PackageManager.NameNotFoundException {
-        this(context);
-        path = new StringBuilder(Environment.getExternalStorageDirectory().getAbsolutePath());
-        path.append("/").append(localDirectory);
-
-    }
     //默认使用APP名称成为本地缓存的目录
-    public ImageCache(Context context) throws PackageManager.NameNotFoundException {
-        mContext = context;
+    private ImageCache(Context context) throws PackageManager.NameNotFoundException {
         md5 = new MD5();
         int maxSize = (int) Runtime.getRuntime().maxMemory() / 8;
         lruCache = new LruCache<String, Bitmap>(maxSize) {
@@ -54,13 +45,43 @@ public class ImageCache {
             localDirectory = context.getResources().getString(labelRes);
         }
         path.append("/").append(localDirectory);
-
     }
 
+    /**
+     * 获取单例对象
+     * @param context
+     * @return
+     * @throws PackageManager.NameNotFoundException
+     */
+    public static ImageCache getImageCache(Context context) throws PackageManager.NameNotFoundException {
+        if (imageCache == null) {
+            synchronized (ImageCache.class) {
+                if (imageCache == null) {
+                    imageCache = new ImageCache(context);
+                }
+            }
 
+        }
+        return imageCache;
+    }
 
+    /**
+     * 设置文件路径
+     * @param name
+     */
+    public void setPath(String name) {
+        StringBuilder stringBuilder = new StringBuilder(Environment.getExternalStorageDirectory().getAbsolutePath());
+        stringBuilder.append("/").append(name);
+        this.path = stringBuilder;
+    }
+
+    /**
+     * 依次向缓存里放东西
+     * @param uri
+     * @param bitmap
+     * @throws Exception
+     */
     public void putBitmap(String uri, Bitmap bitmap) throws Exception {
-        putToLocal(uri, bitmap);
         lruCache.put(uri, bitmap);
     }
 
@@ -105,7 +126,7 @@ public class ImageCache {
         return bitmap;
     }
 
-
+    //检查本地是否存在文件并更新状态消息
     private void checkLocal(String uri,StatusMessage statusMessage) throws Exception {
         String name = md5.encode(uri);
         File file = new File(path.toString(), name);
@@ -121,7 +142,7 @@ public class ImageCache {
      * @param bitmap
      * @throws Exception
      */
-    private void putToLocal(String uri, Bitmap bitmap) throws Exception {
+    public void putToLocal(String uri, Bitmap bitmap) throws Exception {
         String name = md5.encode(uri);
         Log.d(TAG, "putToLocal: "+path.toString());
         File dir = new File(path.toString());
@@ -151,6 +172,7 @@ public class ImageCache {
 
 
 
+    //加密内部类
     public class MD5 {
         public String encode(String string) throws Exception {
             byte[] hash = MessageDigest.getInstance("MD5").digest(string.getBytes("UTF-8"));

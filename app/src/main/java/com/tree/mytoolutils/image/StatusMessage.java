@@ -1,7 +1,6 @@
 package com.tree.mytoolutils.image;
 
 import android.graphics.Bitmap;
-import android.os.Handler;
 import android.os.Message;
 import android.widget.ImageView;
 
@@ -13,7 +12,6 @@ import java.util.concurrent.Future;
 
 
 public class StatusMessage {
-    private final int UPDATE_IMAGE = 1;
 
     String uri;
     boolean islocalExists = false;
@@ -22,20 +20,12 @@ public class StatusMessage {
     ImageCache imageCache;
     Future<?> future;
     Bitmap bitmap;
+    //更新完UI后从列表中删除该图片的消息状态，以便于jvm回收
     Map<String,StatusMessage> statusMessageList;
 
-    ImageView imageView;
 
 
-    private android.os.Handler handler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case UPDATE_IMAGE:
-                    imageView.setImageBitmap(bitmap);
-            }
-        }
-    };
+
 
 
     public StatusMessage(String uri,ImageCache imageCache) {
@@ -47,7 +37,6 @@ public class StatusMessage {
      *将图片加载进View
      */
     public void into(final ImageView imageView){
-        this.imageView = imageView;
         if(isMemoryExists){
             bitmap = imageCache.lruCache.get(uri);
             imageView.setImageBitmap(bitmap);
@@ -65,9 +54,13 @@ public class StatusMessage {
                     try {
                         Message message = new Message();
                         bitmap = (Bitmap) future.get();
+                        imageCache.putToLocal(uri,bitmap);
+                        bitmap = imageCache.getFromLocal(uri, imageView);
                         imageCache.putBitmap(uri,bitmap);
-                        message.what = UPDATE_IMAGE;
-                        handler.sendMessage(message);
+                        message.what = ThreadPoolUtils.getThreadPoolUtils().UPDATE_IMAGE;
+                        MyMessage<ImageView, Bitmap> myMessage = new MyMessage<>(imageView, bitmap);
+                        message.obj = myMessage;
+                        ThreadPoolUtils.getThreadPoolUtils().getHandler().sendMessage(message);
                     } catch (ExecutionException e) {
                         e.printStackTrace();
                     } catch (InterruptedException e) {

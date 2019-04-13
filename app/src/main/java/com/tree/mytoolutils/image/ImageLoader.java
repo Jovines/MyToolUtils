@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.MediaPlayer;
 
 import com.tree.mytoolutils.ThreadPoolUtils;
 
@@ -14,22 +15,21 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 
 public class ImageLoader {
     private static ImageLoader imageLoader;//单列对象
-    Map<String,StatusMessage> statusMessageList;
-    ImageCache imageCache;
-    static Context mContext;
-
+    private Map<String,StatusMessage> statusMessageList;
+    private ImageCache imageCache;
 
 
 
     //私有化构造方法
     private ImageLoader(Context context) throws PackageManager.NameNotFoundException {
-        imageCache = new ImageCache(context);
+        imageCache = ImageCache.getImageCache(context);
         statusMessageList = new HashMap<>();
     }
 
@@ -57,7 +57,6 @@ public class ImageLoader {
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
-        mContext = context;
         return imageLoader;
     }
 
@@ -74,7 +73,7 @@ public class ImageLoader {
         statusMessage.statusMessageList = statusMessageList;
         try {
             imageCache.checkBitmap(uri, statusMessageList.get(uri));
-            if (!statusMessageList.get(uri).islocalExists && !statusMessageList.get(uri).islocalExists) {
+            if (!statusMessage.islocalExists && !statusMessage.isMemoryExists) {
                 getFromInter(uri);
             }
         } catch (InterruptedException e) {
@@ -97,7 +96,7 @@ public class ImageLoader {
      * @throws ExecutionException
      * @throws InterruptedException
      */
-    public StatusMessage getFromInter(final String uri) throws ExecutionException, InterruptedException {
+    public void getFromInter(final String uri) throws ExecutionException, InterruptedException {
         Callable<Bitmap> task = new Callable<Bitmap>() {
             @Override
             public Bitmap call() {
@@ -127,7 +126,16 @@ public class ImageLoader {
                 return bitmap;
             }
         };
-        statusMessageList.get(uri).future = ThreadPoolUtils.getThreadPoolUtils().submit(task);
-        return statusMessageList.get(uri);
+        Objects.requireNonNull(statusMessageList.get(uri)).future = ThreadPoolUtils.getThreadPoolUtils().submit(task);
+    }
+
+    /**
+     * 设置路径名称
+     * @param name
+     * @return
+     */
+    public ImageLoader setFile(String name) {
+        imageCache.setPath(name);
+        return imageLoader;
     }
 }

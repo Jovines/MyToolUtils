@@ -13,7 +13,7 @@ import java.util.concurrent.Future;
 public class InternetUtils {
 
     //建立网络链接获取JSON数据
-    public static Future<?> Requeest(final String url) throws ExecutionException, InterruptedException {
+    public static Future<?> Requeest(final String url){
         Callable<String> task = new Callable<String>() {
             @Override
             public String call() {
